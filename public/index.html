@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+</head>
+<body>
+   <form action="/thcn.do" method="POST">
+   <textarea id="wordstr" name="wordstr" style="width: 650px;height:200px;font-size: 18px;"></textarea>
+   <input type="button" id="gobtn" value="go" />
+   </form>
+   <div id="result">
+   
+   </div>
+</body>
+<style>
+#result {
+    display: none;
+    width: 700px;
+    border: solid 1px #ccc;
+    padding: 10px;
+    line-height: 1.8em;
+}
+</style>
+<script>
+$(function(){
+    $('#gobtn').click(function(){
+        $.post("/thcn.do",{wordstr:$('#wordstr').val()},function(result){
+            $("#result").html(result).show();
+        });
+    });
+});
+</script>
+</html>
