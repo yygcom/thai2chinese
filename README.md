@@ -3,8 +3,8 @@
 
 - 安装使用步骤
 需要nodejs环境
-1. git clone https://github.com/yygcom/thcn.git
-2. cd thcn
+1. git clone https://github.com/yygcom/thai2chinese.git
+2. cd thai2chinese
 3. npm install
 4. node test.js
 5. 打开浏览器，地址输入http://localhost:4000/ 访问即可打开界面
