@@ -1,5 +1,6 @@
+var md5 = require('md5');
 
-var outxx = '';
+var outarr = new Array();
 
 const http2 = require('http2');
 var h1req = require('request');
@@ -8,7 +9,7 @@ function dedupe(array){
  return Array.from(new Set(array));
 }
 
-function getword(words,idx,servobj){
+function getword(words,idx,servobj,strmd5){
     var word = words[idx];
     h1req.post({url:'http://dmfy.emindsoft.com.cn/query/queryByWord.do', form:{dict:'ThToCn',keyWord:word}}, function(error, response, body) {
         if (!error && response.statusCode == 200) {
@@ -18,18 +19,20 @@ function getword(words,idx,servobj){
             if(!xx){
             }else{
                 //console.log(bd1.data);
-                console.log(bd1.data[0].word);
-                console.log(bd1.data[0].explain);
-                console.log("\n\r\n\r");
+                //console.log(bd1.data[0].word);
+                //console.log(bd1.data[0].explain);
+                //console.log("\n\r\n\r");
 
-                outxx = outxx + bd1.data[0].word + ' ' + bd1.data[0].explain + '<br>';
+                outarr[strmd5] = outarr[strmd5] + bd1.data[0].word + ' ' + bd1.data[0].explain + '<br>';
             }
             idx++;
             if(idx<words.length){
-                getword(words,idx,servobj);
+                getword(words,idx,servobj,strmd5);
             }else{
                 servobj.writeHead('200',{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST','Access-Control-Allow-Headers':'x-requested-with,content-type','Content-Type': 'text/html;charset=utf-8'});
-                servobj.end(outxx);
+                servobj.end(outarr[strmd5]);
+                delete outarr[strmd5];
+                console.log(outarr);
             }
         }
     })
@@ -37,7 +40,8 @@ function getword(words,idx,servobj){
 
 
 function getxx(str,servobj){
-    outxx = '';
+    var strmd5 = md5(str);
+    outarr[strmd5] = '';
     var request = {
         ':method' : 'POST',  
         ':scheme' : 'https',  
@@ -69,9 +73,9 @@ function getxx(str,servobj){
     req.on('end', () => {
       //console.log(`\n${data}`);
         var result = JSON.parse(data).SpacedQuery;
-        console.log(result);
-        outxx = outxx + result + '<br>';
-        console.log("\n\r\n\r");
+        //console.log(result);
+        outarr[strmd5] = outarr[strmd5] + result + '<br>';
+        //console.log("\n\r\n\r");
 
         var words = result.split(' ');
         words = dedupe(words);
@@ -79,7 +83,7 @@ function getxx(str,servobj){
         client.destroy();
 
         //words.forEach(function(word,idx){
-        getword(words,0,servobj);
+        getword(words,0,servobj,strmd5);
         //});
     });
     req.end();
