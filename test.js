@@ -32,7 +32,7 @@ function getword(words,idx,servobj,strmd5){
                 servobj.writeHead('200',{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST','Access-Control-Allow-Headers':'x-requested-with,content-type','Content-Type': 'text/html;charset=utf-8'});
                 servobj.end(outarr[strmd5]);
                 delete outarr[strmd5];
-                console.log(outarr);
+                //console.log(outarr);
             }
         }
     })
