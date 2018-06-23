@@ -11,10 +11,20 @@ function dedupe(array){
 
 function getword(words,idx,servobj,strmd5){
     var word = words[idx];
-    h1req.post({url:'http://dmfy.emindsoft.com.cn/query/queryByWord.do', form:{dict:'ThToCn',keyWord:word}}, function(error, response, body) {
+    h1req.post({
+		url:'https://dmfy.emindsoft.com.cn/mobile/queryByWord.do',
+		headers: {
+			'version': '2.8.2',
+			'locale': 'zh',
+			'platform': 'iOS',
+			'Content-Type': 'application/x-www-form-urlencoded',
+			'User-Agent': 'YMTranslateCloudUser/2.8 (iPhone; iOS 10.3.3; Scale/2.00)'
+    	},
+	   	form:{dict:'ThToCn',keyWord:word}
+	}, function(error, response, body) {
         if (!error && response.statusCode == 200) {
             var bd1 = JSON.parse(body);
-            //console.log(bd1);
+            console.log(bd1);
             xx = bd1.data[0];
             if(!xx){
             }else{
