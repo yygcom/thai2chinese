@@ -20,15 +20,22 @@ function dedupe(array){
 
 function getword(words,idx,servobj,strmd5){
     word = words[idx];
+    //console.log(word);
 
     cb_getwordr = function(obj,flag){
         if(flag == 0){
             connection.end();
             cb_next('','');
         }else{
+
+            if(obj[0].id == 28162){ //先跳过这个，原因未知
+                connection.end();
+                cb_next('','');
+            }else{
             
             var  addSql = 'INSERT INTO thaidic(id,word,`explain`,examp,pronu,thesaurus) VALUES(?,?,?,?,?,?)';
             var  addSqlParams = [obj[0].id,obj[0].word,obj[0].explain,JSON.stringify(obj[0].examp),obj[0].pronu,JSON.stringify(obj[0].thesaurus)];
+            //console.log(addSqlParams);
             //var  addSqlParams = [obj[0].id,obj[0].word,obj[0].explain,obj[0].examp.toString(),obj[0].pronu,obj[0].thesaurus.toString()];
             connection.query(addSql,addSqlParams,function (err, result) {
                 if(err){
@@ -43,6 +50,7 @@ function getword(words,idx,servobj,strmd5){
             connection.end();
             //bd1.data[0].word + ' ' + bd1.data[0].explain
             cb_next(obj[0].word,obj[0].explain);
+            }
         }
     };
 
