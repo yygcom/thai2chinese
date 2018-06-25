@@ -5,12 +5,84 @@ var outarr = new Array();
 const http2 = require('http2');
 var h1req = require('request');
 
+var mysql      = require('mysql');
+
+
+
+
+
+
+
 function dedupe(array){
  return Array.from(new Set(array));
 }
 
+
 function getword(words,idx,servobj,strmd5){
-    var word = words[idx];
+    word = words[idx];
+
+    cb_getwordr = function(obj,flag){
+        if(flag == 0){
+            connection.end();
+            cb_next('','');
+        }else{
+            
+            var  addSql = 'INSERT INTO thaidic(id,word,`explain`,examp,pronu,thesaurus) VALUES(?,?,?,?,?,?)';
+            var  addSqlParams = [obj[0].id,obj[0].word,obj[0].explain,JSON.stringify(obj[0].examp),obj[0].pronu,JSON.stringify(obj[0].thesaurus)];
+            //var  addSqlParams = [obj[0].id,obj[0].word,obj[0].explain,obj[0].examp.toString(),obj[0].pronu,obj[0].thesaurus.toString()];
+            connection.query(addSql,addSqlParams,function (err, result) {
+                if(err){
+                    console.log('[INSERT ERROR] - ',err.message);
+                    return;
+                }     
+                console.log('INSERT ID:',result.insertId);        
+                //console.log('INSERT ID:',result);        
+            });
+
+
+            connection.end();
+            //bd1.data[0].word + ' ' + bd1.data[0].explain
+            cb_next(obj[0].word,obj[0].explain);
+        }
+    };
+
+    cb_next = function(word,explain){
+        outarr[strmd5] = outarr[strmd5] + word + ' ' + explain + '<br>';
+        idx++;
+        if(idx<words.length){
+            getword(words,idx,servobj,strmd5);
+        }else{
+            servobj.writeHead('200',{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST','Access-Control-Allow-Headers':'x-requested-with,content-type','Content-Type': 'text/html;charset=utf-8'});
+            servobj.end(outarr[strmd5]);
+            delete outarr[strmd5];
+        }
+    };
+
+    var connection = mysql.createConnection({
+      host     : '172.20.3.194',
+      user     : 'dev',
+      password : 'dev',
+      database : 'test_loc',
+      charset  : 'utf8mb4'
+    });
+    connection.connect();
+    connection.query("SELECT * from thaidic where word = '"+word+"'", function (error, results, fields) {
+        if (error) throw error;
+        //console.log('The solution is: ',  results.length );
+        //如果没有查询到则调用远程查询
+        if(results.length == 0){
+            //console.log('remote');
+            getwordr(word,cb_getwordr);
+        }else{
+            connection.end();
+            cb_next(word,results[0].explain);
+        }
+        //connection.end();
+    }); 
+}
+
+function getwordr(word,callback){
+    //console.log(word+'-------------------');
     h1req.post({
 		url:'https://dmfy.emindsoft.com.cn/mobile/queryByWord.do',
 		headers: {
@@ -27,23 +99,15 @@ function getword(words,idx,servobj,strmd5){
             //console.log(bd1);
             xx = bd1.data[0];
             if(!xx){
+                callback(bd1.data,0);
             }else{
                 //console.log(bd1.data);
-                //console.log(bd1.data[0].word);
-                //console.log(bd1.data[0].explain);
-                //console.log("\n\r\n\r");
 
-                outarr[strmd5] = outarr[strmd5] + bd1.data[0].word + ' ' + bd1.data[0].explain + '<br>';
+                //outarr[strmd5] = outarr[strmd5] + bd1.data[0].word + ' ' + bd1.data[0].explain + '<br>';
+                callback(bd1.data,1);
+                //console.log(word+bd1.data[0].explain);
             }
-            idx++;
-            if(idx<words.length){
-                getword(words,idx,servobj,strmd5);
-            }else{
-                servobj.writeHead('200',{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST','Access-Control-Allow-Headers':'x-requested-with,content-type','Content-Type': 'text/html;charset=utf-8'});
-                servobj.end(outarr[strmd5]);
-                delete outarr[strmd5];
-                //console.log(outarr);
-            }
+
         }
     })
 }
