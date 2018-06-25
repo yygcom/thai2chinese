@@ -61,8 +61,9 @@ function getword(words,idx,servobj,strmd5){
             getword(words,idx,servobj,strmd5);
         }else{
             servobj.writeHead('200',{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST','Access-Control-Allow-Headers':'x-requested-with,content-type','Content-Type': 'text/html;charset=utf-8'});
-            servobj.end(outarr[strmd5]);
+            var tmp = outarr[strmd5];
             delete outarr[strmd5];
+            return servobj.end(tmp);
         }
     };
 
@@ -155,6 +156,7 @@ function getxx(str,servobj){
     req.on('end', () => {
       //console.log(`\n${data}`);
         var result = JSON.parse(data).SpacedQuery;
+        var wordmore = JSON.parse(data).Sentences[0].WordObjects;
         //console.log(result);
         outarr[strmd5] = outarr[strmd5] + result + '<br>';
         //console.log("\n\r\n\r");
@@ -163,6 +165,13 @@ function getxx(str,servobj){
         words = dedupe(words);
         //console.log(words);
         client.destroy();
+
+        //处理词组
+        for(var p in wordmore){//遍历json对象的每个key/value对,p为key
+            //console.log(wordmore[p]);
+            words.push(wordmore[p].Word);
+        }
+        words = dedupe(words);
 
         //words.forEach(function(word,idx){
         getword(words,0,servobj,strmd5);
