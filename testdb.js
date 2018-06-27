@@ -153,7 +153,7 @@ var excludeSpecial = function(s) {
     // 去掉中文
     s = s.replace(/[\u4e00-\u9fa5]/g,'');
     // 去掉中文标点
-    s = s.replace(/[\uff1a\uff1b\uff0c\u3002\u201c\u201d\uff01\u002e]/g,''); 
+    s = s.replace(/[\uff1a\uff1b\uff0c\u3002\u201c\u201d\uff01\u002e\u005b\u005d\uff08\uff09]/g,''); 
     return s;
  };
 
