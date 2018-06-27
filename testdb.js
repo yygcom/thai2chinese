@@ -25,7 +25,7 @@ function getword(words,idx,servobj,strmd5){
     cb_getwordr = function(obj,flag){
         if(flag == 0){
             connection.end();
-            cb_next('','');
+            cb_next('<span style="color:red;">【'+obj+'】 未查询到结果</span>','');
         }else{
 
             if(obj[0].id == 28162){ //先跳过这个，原因未知
@@ -112,7 +112,7 @@ function getwordr(word,callback){
             xx = bd1.data[0];
             if(!xx){
                 console.log('ER----------> [ ER ]'+word);
-                callback(bd1.data,0);
+                callback(word,0);
             }else{
                 //console.log(bd1.data);
 
