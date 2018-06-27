@@ -20,7 +20,7 @@ function dedupe(array){
 
 function getword(words,idx,servobj,strmd5){
     word = words[idx];
-    //console.log(word);
+    //console.log('>>'+word);
 
     cb_getwordr = function(obj,flag){
         if(flag == 0){
@@ -42,7 +42,7 @@ function getword(words,idx,servobj,strmd5){
                     console.log('[INSERT ERROR] - ',err.message);
                     return;
                 }     
-                console.log('INSERT ID:',result.insertId);        
+                console.log('IN---------------------> [ DB ]',);        
                 //console.log('INSERT ID:',result);        
             });
 
@@ -63,6 +63,7 @@ function getword(words,idx,servobj,strmd5){
             servobj.writeHead('200',{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST','Access-Control-Allow-Headers':'x-requested-with,content-type','Content-Type': 'text/html;charset=utf-8'});
             var tmp = outarr[strmd5];
             delete outarr[strmd5];
+            console.log('end-----------------');
             return servobj.end(tmp);
         }
     };
@@ -81,8 +82,10 @@ function getword(words,idx,servobj,strmd5){
         //如果没有查询到则调用远程查询
         if(results.length == 0){
             //console.log('remote');
+            console.log('R>'+word);
             getwordr(word,cb_getwordr);
         }else{
+            console.log('M>'+word);
             connection.end();
             cb_next(word,results[0].explain);
         }
@@ -108,6 +111,7 @@ function getwordr(word,callback){
             //console.log(bd1);
             xx = bd1.data[0];
             if(!xx){
+                console.log('ER----------> [ ER ]'+word);
                 callback(bd1.data,0);
             }else{
                 //console.log(bd1.data);
@@ -121,6 +125,33 @@ function getwordr(word,callback){
     })
 }
 
+var isJSON = function(str) {
+    if (typeof str == 'string') {
+        try {
+            var obj=JSON.parse(str);
+            if(typeof obj == 'object' && obj ){
+                return true;
+            }else{
+                return false;
+            }
+
+        } catch(e) {
+            console.log('error：'+str+'!!!'+e);
+            return false;
+        }
+    }
+    console.log('It is not a string!'+str);
+}
+
+var excludeSpecial = function(s) {
+    // 去掉转义字符
+    s = s.replace(/[\'\"\\\/\b\f\n\r\t]/g, '');
+    // 去掉特殊字符
+    s = s.replace(/[\@\#\$\%\^\&\*\{\}\:\"\L\<\>\?\(\)]/g,'');
+    // 去掉英文
+    s = s.replace(/[a-zA-Z0-9]/g,'');
+    return s;
+ };
 
 function getxx(str,servobj){
     var strmd5 = md5(str);
@@ -155,27 +186,32 @@ function getxx(str,servobj){
     req.on('data', (chunk) => { data += chunk; });
     req.on('end', () => {
       //console.log(`\n${data}`);
-        var result = JSON.parse(data).SpacedQuery;
-        var wordmore = JSON.parse(data).Sentences[0].WordObjects;
-        //console.log(result);
-        outarr[strmd5] = outarr[strmd5] + result + '<br>';
-        //console.log("\n\r\n\r");
+        if(isJSON(data)){
+            var result = JSON.parse(data).SpacedQuery;
+            var wordmore = JSON.parse(data).Sentences[0].WordObjects;
+            //console.log(result);
+            outarr[strmd5] = outarr[strmd5] + result + '<br>';
+            //console.log("\n\r\n\r");
 
-        var words = result.split(' ');
-        words = dedupe(words);
-        //console.log(words);
-        client.destroy();
+            var words = result.split(' ');
+            words = dedupe(words);
+            //console.log(words);
+            client.destroy();
 
-        //处理词组
-        for(var p in wordmore){//遍历json对象的每个key/value对,p为key
-            //console.log(wordmore[p]);
-            words.push(wordmore[p].Word);
+            //处理词组
+            for(var p in wordmore){//遍历json对象的每个key/value对,p为key
+                //console.log(wordmore[p]);
+                words.push(wordmore[p].Word);
+            }
+            words = dedupe(words);
+
+            //words.forEach(function(word,idx){
+            getword(words,0,servobj,strmd5);
+            //});
+        }else{
+            return servobj.end();
+            //return false;
         }
-        words = dedupe(words);
-
-        //words.forEach(function(word,idx){
-        getword(words,0,servobj,strmd5);
-        //});
     });
     req.end();
 
@@ -211,7 +247,8 @@ var http = require('http');
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
 
 app.post('/thcn.do', urlencodedParser, function (req, res) {
-	var str = req.body.wordstr;
+	var str = excludeSpecial(req.body.wordstr);
+    console.log(str);
     
     getxx(str,res);
 

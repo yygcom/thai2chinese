@@ -1,0 +1,1 @@
+node geturl.js %1
