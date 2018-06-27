@@ -26,6 +26,7 @@
 <script>
 $(function(){
     $('#gobtn').click(function(){
+        $('#result').html('查询中...');
         $.post("/thcn.do",{wordstr:$('#wordstr').val()},function(result){
             $("#result").html(result).show();
         });

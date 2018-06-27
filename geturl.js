@@ -11,12 +11,16 @@ function getwords(urla){
         if (!error && response.statusCode == 200) {
             //console.log(body);
             var dd=body.replace(/<\/?.+?>/g,"");
+            // 去掉中文
+            dd = dd.replace(/[\u4e00-\u9fa5]/g,'');
+            // 去掉中文标点
+            dd = dd.replace(/[\uff1a\uff1b\uff0c\u3002\u201c\u201d\uff01\u002e]/g,''); 
             var dds=dd.replace(/[\r\na-zA-Z0-9,\)\(=;\+\|\{\}\[\]\?"\-#\&\*\!\/\$\:\L\@\^\t\b\ \<\>\.]/g,"");//dds为得到后的内容
             //console.log(dds);
 
 
             h2req.post({
-                url:'http://localhost:4000/thcn.do',
+                url:'http://172.20.3.194:4000/thcn.do',
                 headers: {
                     'version': '2.8.2',
                     'locale': 'zh',

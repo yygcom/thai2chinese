@@ -149,7 +149,11 @@ var excludeSpecial = function(s) {
     // 去掉特殊字符
     s = s.replace(/[\@\#\$\%\^\&\*\{\}\:\"\L\<\>\?\(\)]/g,'');
     // 去掉英文
-    s = s.replace(/[a-zA-Z0-9]/g,'');
+    s = s.replace(/[a-zA-Z0-9\,]/g,'');
+    // 去掉中文
+    s = s.replace(/[\u4e00-\u9fa5]/g,'');
+    // 去掉中文标点
+    s = s.replace(/[\uff1a\uff1b\uff0c\u3002\u201c\u201d\uff01\u002e]/g,''); 
     return s;
  };
 
