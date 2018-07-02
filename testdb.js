@@ -5,7 +5,35 @@ var outarr = new Array();
 const http2 = require('http2');
 var h1req = require('request');
 
-var mysql      = require('mysql');
+var mysql = require('mysql');
+
+var dbconfig = {
+    host     : '172.20.3.194',
+    user     : 'dev',
+    password : 'dev',
+    database : 'test_loc',
+    charset  : 'utf8mb4'
+};
+var versioninfo = '小程序前端版本: 1.0.1 <br>小程序后端版本 20180701.0.1<br>';
+//connection.connect();
+var connection = mysql.createConnection(dbconfig);
+
+function handleError (err) {
+    if (err) {
+        // 如果是连接断开，自动重新连接
+        if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+            connect();
+        } else {
+            console.error(err.stack || err);
+        }
+    }
+}
+
+// 连接数据库
+function connect () {
+    connection.connect(handleError);
+    connection.on('error', handleError);
+}
 
 
 
@@ -14,7 +42,7 @@ var mysql      = require('mysql');
 
 
 function dedupe(array){
- return Array.from(new Set(array));
+    return Array.from(new Set(array));
 }
 
 
@@ -24,32 +52,32 @@ function getword(words,idx,servobj,strmd5){
 
     cb_getwordr = function(obj,flag){
         if(flag == 0){
-            connection.end();
+            //connection.end();
             cb_next('<span style="color:red;">【'+obj+'】 未查询到结果</span>','');
         }else{
 
             if(obj[0].id == 28162){ //先跳过这个，原因未知
-                connection.end();
+                //connection.end();
+
                 cb_next('','');
             }else{
-            
-            var  addSql = 'INSERT INTO thaidic(id,word,`explain`,examp,pronu,thesaurus) VALUES(?,?,?,?,?,?)';
-            var  addSqlParams = [obj[0].id,obj[0].word,obj[0].explain,JSON.stringify(obj[0].examp),obj[0].pronu,JSON.stringify(obj[0].thesaurus)];
-            //console.log(addSqlParams);
-            //var  addSqlParams = [obj[0].id,obj[0].word,obj[0].explain,obj[0].examp.toString(),obj[0].pronu,obj[0].thesaurus.toString()];
-            connection.query(addSql,addSqlParams,function (err, result) {
-                if(err){
-                    console.log('[INSERT ERROR] - ',err.message);
-                    return;
-                }     
-                console.log('IN---------------------> [ DB ]',);        
-                //console.log('INSERT ID:',result);        
-            });
 
+                var  addSql = 'INSERT INTO thaidic(id,word,`explain`,examp,pronu,thesaurus) VALUES(?,?,?,?,?,?)';
+                var  addSqlParams = [obj[0].id,obj[0].word,obj[0].explain,JSON.stringify(obj[0].examp),obj[0].pronu,JSON.stringify(obj[0].thesaurus)];
+                //console.log(addSqlParams);
+                //var  addSqlParams = [obj[0].id,obj[0].word,obj[0].explain,obj[0].examp.toString(),obj[0].pronu,obj[0].thesaurus.toString()];
+                connection.query(addSql,addSqlParams,function (err, result) {
+                    if(err){
+                        console.log('[INSERT ERROR] - ',err.message);
+                        return;
+                    }     
+                    console.log('IN---------------------> [ DB ]',);        
+                    //console.log('INSERT ID:',result);        
+                });
 
-            connection.end();
-            //bd1.data[0].word + ' ' + bd1.data[0].explain
-            cb_next(obj[0].word,obj[0].explain);
+                //connection.end();
+                //bd1.data[0].word + ' ' + bd1.data[0].explain
+                cb_next(obj[0].word,obj[0].explain);
             }
         }
     };
@@ -60,7 +88,7 @@ function getword(words,idx,servobj,strmd5){
         if(idx<words.length){
             getword(words,idx,servobj,strmd5);
         }else{
-            servobj.writeHead('200',{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST','Access-Control-Allow-Headers':'x-requested-with,content-type','Content-Type': 'text/html;charset=utf-8'});
+            //servobj.writeHead('200',{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST','Access-Control-Allow-Headers':'x-requested-with,content-type','Content-Type': 'text/html;charset=utf-8'});
             var tmp = outarr[strmd5];
             delete outarr[strmd5];
             console.log('end-----------------');
@@ -68,15 +96,8 @@ function getword(words,idx,servobj,strmd5){
         }
     };
 
-    var connection = mysql.createConnection({
-      host     : '172.20.3.194',
-      user     : 'dev',
-      password : 'dev',
-      database : 'test_loc',
-      charset  : 'utf8mb4'
-    });
-    connection.connect();
     connection.query("SELECT * from thaidic where word = '"+word+"'", function (error, results, fields) {
+        console.log(error);
         if (error) throw error;
         //console.log('The solution is: ',  results.length );
         //如果没有查询到则调用远程查询
@@ -86,8 +107,12 @@ function getword(words,idx,servobj,strmd5){
             getwordr(word,cb_getwordr);
         }else{
             console.log('M>'+word);
-            connection.end();
-            cb_next(word,results[0].explain);
+            //connection.end();
+            if(word == ''){
+                cb_next('[]','查无结果');
+            }else{
+                cb_next(word,results[0].explain);
+            }
         }
         //connection.end();
     }); 
@@ -96,16 +121,16 @@ function getword(words,idx,servobj,strmd5){
 function getwordr(word,callback){
     //console.log(word+'-------------------');
     h1req.post({
-		url:'https://dmfy.emindsoft.com.cn/mobile/queryByWord.do',
-		headers: {
-			'version': '2.8.2',
-			'locale': 'zh',
-			'platform': 'iOS',
-			'Content-Type': 'application/x-www-form-urlencoded',
-			'User-Agent': 'YMTranslateCloudUser/2.8 (iPhone; iOS 10.3.3; Scale/2.00)'
-    	},
-	   	form:{dict:'ThToCn',keyWord:word}
-	}, function(error, response, body) {
+        url:'https://dmfy.emindsoft.com.cn/mobile/queryByWord.do',
+        headers: {
+            'version': '2.8.2',
+            'locale': 'zh',
+            'platform': 'iOS',
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'User-Agent': 'YMTranslateCloudUser/2.8 (iPhone; iOS 10.3.3; Scale/2.00)'
+        },
+        form:{dict:'ThToCn',keyWord:word}
+    }, function(error, response, body) {
         if (!error && response.statusCode == 200) {
             var bd1 = JSON.parse(body);
             //console.log(bd1);
@@ -155,11 +180,11 @@ var excludeSpecial = function(s) {
     // 去掉中文标点
     s = s.replace(/[\uff1a\uff1b\uff0c\u3002\u201c\u201d\uff01\u002e\u005b\u005d\uff08\uff09]/g,''); 
     return s;
- };
+};
 
 function getxx(str,servobj){
     var strmd5 = md5(str);
-    outarr[strmd5] = '';
+    outarr[strmd5] = versioninfo;
     var request = {
         ':method' : 'POST',  
         ':scheme' : 'https',  
@@ -189,7 +214,7 @@ function getxx(str,servobj){
     req.write(rdata);
     req.on('data', (chunk) => { data += chunk; });
     req.on('end', () => {
-      //console.log(`\n${data}`);
+        //console.log(`\n${data}`);
         if(isJSON(data)){
             var result = JSON.parse(data).SpacedQuery;
             var wordmore = JSON.parse(data).Sentences[0].WordObjects;
@@ -207,6 +232,8 @@ function getxx(str,servobj){
                 //console.log(wordmore[p]);
                 words.push(wordmore[p].Word);
             }
+            // 处理少于10 字符的词
+            if( str.length <= 10) words.push(str.trim());
             words = dedupe(words);
 
             //words.forEach(function(word,idx){
@@ -251,9 +278,9 @@ var http = require('http');
 var urlencodedParser = bodyParser.urlencoded({ extended: false });
 
 app.post('/thcn.do', urlencodedParser, function (req, res) {
-	var str = excludeSpecial(req.body.wordstr);
+    var str = excludeSpecial(req.body.wordstr);
     console.log(str);
-    
+
     getxx(str,res);
 
 });
@@ -261,7 +288,7 @@ app.post('/thcn.do', urlencodedParser, function (req, res) {
 
 app.use(express.static('public',{setHeaders: setCustomHeader}));
 function setCustomHeader(res,path){
-        res.append("Content-Type", express.static.mime.lookup(path)+";charset=utf-8");
+    res.append("Content-Type", express.static.mime.lookup(path)+";charset=utf-8");
 }
 
 var httpServer = http.createServer(app);
