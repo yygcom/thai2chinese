@@ -14,9 +14,9 @@ var dbconfig = {
     database : 'test_loc',
     charset  : 'utf8mb4'
 };
-var versioninfo = '小程序前端版本: 1.0.1 <br>小程序后端版本 20180701.0.1<br>';
+var versioninfo = '程序版本: 1.0.2 [20180704.1]<br>';
 //connection.connect();
-var connection = mysql.createConnection(dbconfig);
+//var connection = mysql.createConnection(dbconfig);
 
 function handleError (err) {
     if (err) {
@@ -31,9 +31,12 @@ function handleError (err) {
 
 // 连接数据库
 function connect () {
+    return mysql.createConnection(dbconfig);
     connection.connect(handleError);
     connection.on('error', handleError);
 }
+
+var connection = connect();
 
 
 
