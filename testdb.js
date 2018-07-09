@@ -29,15 +29,17 @@ function handleError (err) {
     }
 }
 
+var connection;
+
 // 连接数据库
 function connect () {
-    return mysql.createConnection(dbconfig);
+    connection = mysql.createConnection(dbconfig);
     connection.connect(handleError);
     connection.on('error', handleError);
 }
 
-var connection = connect();
-
+//var connection = connect();
+connect();
 
 
 
@@ -64,23 +66,33 @@ function getword(words,idx,servobj,strmd5){
 
                 cb_next('','');
             }else{
+                var wordexplain = '';
+                obj.map(function(value, index, array) {
 
-                var  addSql = 'INSERT INTO thaidic(id,word,`explain`,examp,pronu,thesaurus) VALUES(?,?,?,?,?,?)';
-                var  addSqlParams = [obj[0].id,obj[0].word,obj[0].explain,JSON.stringify(obj[0].examp),obj[0].pronu,JSON.stringify(obj[0].thesaurus)];
-                //console.log(addSqlParams);
-                //var  addSqlParams = [obj[0].id,obj[0].word,obj[0].explain,obj[0].examp.toString(),obj[0].pronu,obj[0].thesaurus.toString()];
-                connection.query(addSql,addSqlParams,function (err, result) {
-                    if(err){
-                        console.log('[INSERT ERROR] - ',err.message);
-                        return;
-                    }     
-                    console.log('IN---------------------> [ DB ]',);        
-                    //console.log('INSERT ID:',result);        
+                    var pronu = obj[index].pronu != '' ? '【'+obj[index].pronu+'】' : '';
+                    wordexplain = wordexplain+pronu+obj[index].explain+'&nbsp;';
+
+                    var  addSql = 'INSERT INTO thaidic(id,word,`explain`,examp,pronu,thesaurus) VALUES(?,?,?,?,?,?)';
+                    var  addSqlParams = [obj[index].id,obj[index].word,obj[index].explain,JSON.stringify(obj[index].examp),obj[index].pronu,JSON.stringify(obj[index].thesaurus)];
+                    //console.log(addSqlParams);
+                    //var  addSqlParams = [obj[0].id,obj[0].word,obj[0].explain,obj[0].examp.toString(),obj[0].pronu,obj[0].thesaurus.toString()];
+                    connection.query(addSql,addSqlParams,function (err, result) {
+                        if(err){
+                            console.log('[INSERT ERROR] - ',err.message);
+                            return;
+                        }     
+                        console.log('IN---------------------> [ DB ]',);        
+                        //console.log('INSERT ID:',result);        
+                    });
+
+
                 });
+                
 
                 //connection.end();
                 //bd1.data[0].word + ' ' + bd1.data[0].explain
-                cb_next(obj[0].word,obj[0].explain);
+                //cb_next(obj[0].word,obj[0].explain);
+                cb_next(obj[0].word,wordexplain);
             }
         }
     };
@@ -114,7 +126,14 @@ function getword(words,idx,servobj,strmd5){
             if(word == ''){
                 cb_next('[]','查无结果');
             }else{
-                cb_next(word,results[0].explain);
+                var wordexplain = '';
+                results.map(function(value, index, array) {
+                    var pronu = results[index].pronu != '' && results[index].pronu != null ? '【'+results[index].pronu+'】' : '';
+                    wordexplain = wordexplain+pronu+results[index].explain+'&nbsp;';
+                });
+
+                //cb_next(word,results[0].explain);
+                cb_next(word,wordexplain);
             }
         }
         //connection.end();
@@ -136,7 +155,7 @@ function getwordr(word,callback){
     }, function(error, response, body) {
         if (!error && response.statusCode == 200) {
             var bd1 = JSON.parse(body);
-            //console.log(bd1);
+            //console.log(bd1.data.length);
             xx = bd1.data[0];
             if(!xx){
                 console.log('ER----------> [ ER ]'+word);
