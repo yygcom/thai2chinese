@@ -14,7 +14,7 @@ var dbconfig = {
     database : 'test_loc',
     charset  : 'utf8mb4'
 };
-var versioninfo = '程序版本: 1.0.2 [20180704.1]<br>';
+var versioninfo = '程序版本: 1.0.3.2 [20180720.1]<br>';
 //connection.connect();
 //var connection = mysql.createConnection(dbconfig);
 
@@ -304,6 +304,28 @@ app.post('/thcn.do', urlencodedParser, function (req, res) {
     console.log(str);
 
     getxx(str,res);
+
+});
+
+app.get('/getnum.do',function(req,res){
+    connection.query("SELECT SQL_CALC_FOUND_ROWS id FROM `thaidic` LIMIT 1;", function (error, results, fields) {
+        console.log(error);
+        if (error) throw error;
+        //console.log('The solution is: ',  results.length );
+        //如果没有查询到则调用远程查询
+        connection.query("SELECT FOUND_ROWS() AS rowcount;", function (error, results, fields) {
+            console.log(error);
+            if (error) throw error;
+            //console.log('The solution is: ',  results.length );
+            //如果没有查询到则调用远程查询
+            if(results.length == 0){
+            }else{
+                //console.log(results);
+                return res.end(results[0]['rowcount'].toString());
+            }
+        });
+
+    });
 
 });
 
