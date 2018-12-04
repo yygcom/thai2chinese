@@ -1,36 +1,140 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
     <title></title>
-    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+	<link rel="stylesheet" href="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/css/bootstrap.min.css">
+	<link href="https://fonts.googleapis.com/css?family=Chakra+Petch|Charmonma|Pridin" rel="stylesheet">
+	<script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+	<script src="https://cdn.staticfile.org/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
 </head>
 <body>
-   <form action="/thcn.do" method="POST">
-   <textarea id="wordstr" name="wordstr" style="width: 650px;height:200px;font-size: 18px;"></textarea>
-   <input type="button" id="gobtn" value="go" />
-   </form>
+<div class="container">
+
+<form role="form">
+	<div class="form-group wordstrx">
+		<label for="name">泰语内容</label>
+		<textarea class="form-control" rows="4" id="wordstr"></textarea>
+		<a href="javascript:;" id="clrbtn" >X</a>
+		<a href="javascript:;" id="cibtn" >O</a>
+	</div>
+	
+	<div class="form-group row">
+		<div class="col-xs-6">
+			<button type="button" id="gobtn" class="btn btn-success">自动拆词查询</button>
+		</div>
+		<div class="col-xs-6">
+			<button type="button" id="goxnbtn" class="btn btn-info">一行一词查询</button>
+		</div>
+	</div>
+</form>
+
    <div id="result">
    
    </div>
+
+   <div id="cx">
+คำกริยา=ก. 动词<br>
+คำนาม=น. 名词<br>
+คำบุพบท=บ. 介词<br>
+คำวิเศษณ์=ว. 副词<br>
+คำสรรพนาม=ส. 代词<br />
+คำสันธาน=สัน. 连词<br />
+คำอุทาน=อ. 叹词<br />
+   </div>
+	
+</div>
 </body>
 <style>
-#result {
+#gobtn,
+#goxnbtn {
+	width: 100%;
+}
+#result ,
+#cx {
     display: none;
-    width: 700px;
+    font-size: 24px;
     border: solid 1px #ccc;
     padding: 10px;
-    line-height: 1.8em;
+    line-height: 1.6em;
+    font-family: 'Chakra Petch', sans-serif;
+    font-weight: 400;
+}
+#wordstr {
+    color: #1e819e;
+    font-size: 20px;
+    font-family: 'Chakra Petch', sans-serif;
+    font-weight: 400;
+}
+.wordstrx {
+	position: relative;
+}
+#clrbtn {
+	position: absolute;
+	top: 20px;
+	right: -5px;
+	background: #eaeaea;;
+	border: solid 1px #ccc;
+	border-radius: 50%;
+	padding: 0 5px;
+	color: #999;
+	font-size: 12px;
+}
+#cibtn {
+	position: absolute;
+	bottom: -5px;
+	right: -5px;
+	border: solid 1px #ccc;
+	background: #eaeaea;
+	border-radius: 50%;
+	padding: 0 5px;
+	font-size: 12px;
+	color: #333;
+}
+#cx {
+    position: fixed;
+    top: 0;
+    background: #fff;
 }
 </style>
 <script>
 $(function(){
     $('#gobtn').click(function(){
+    	if($('#wordstr').val()=='') return false;
         $('#result').html('查询中...');
         $.post("/thcn.do",{wordstr:$('#wordstr').val()},function(result){
             $("#result").html(result).show();
         });
     });
+
+    $('#goxnbtn').click(function(){
+    	if($('#wordstr').val()=='') return false;
+        $('#result').html('查询中...');
+        $.post("/thcnxn.do",{wordstr:$('#wordstr').val()},function(result){
+            $("#result").html(result.replace(/#/g,'&nbsp;')).show();
+        });
+    });
+
+    $('#gofmx3btn').click(function(){
+        $('#result').html('查询中...');
+        $.post("/thcnfmx3.do",{wordstr:$('#wordstr').val()},function(result){
+            $("#result").html(result).show();
+        });
+    });
+
+	$('#clrbtn').click(function(){
+		$('#wordstr').val('');
+	});
+
+	$('#cibtn').click(function(){
+		$('#cx').toggle();
+	});
+
 });
 </script>
+<script type="text/javascript" src="http://tajs.qq.com/stats?sId=66124253" charset="UTF-8"></script>
 </html>

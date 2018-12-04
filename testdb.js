@@ -1,6 +1,9 @@
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 var md5 = require('md5');
 
 var outarr = new Array();
+
+var fmtarr = new Array();
 
 const http2 = require('http2');
 var h1req = require('request');
@@ -8,10 +11,10 @@ var h1req = require('request');
 var mysql = require('mysql');
 
 var dbconfig = {
-    host     : '172.20.3.194',
-    user     : 'dev',
-    password : 'dev',
-    database : 'test_loc',
+    host     : 'localhost',
+    user     : 'test',
+    password : 'test',
+    database : 'test',
     charset  : 'utf8mb4'
 };
 var versioninfo = '程序版本: 1.0.3.2 [20180720.1]<br>';
@@ -58,7 +61,11 @@ function getword(words,idx,servobj,strmd5){
     cb_getwordr = function(obj,flag){
         if(flag == 0){
             //connection.end();
-            cb_next('<span style="color:red;">【'+obj+'】 未查询到结果</span>','');
+            if(fmtarr[strmd5] === 3){
+                cb_next('【'+obj+'】 未查询到结果',"\n");
+            }else{
+                cb_next('<span style="color:red;">【'+obj+'】 未查询到结果</span>','');
+            }
         }else{
 
             if(obj[0].id == 28162){ //先跳过这个，原因未知
@@ -98,7 +105,15 @@ function getword(words,idx,servobj,strmd5){
     };
 
     cb_next = function(word,explain){
-        outarr[strmd5] = outarr[strmd5] + word + ' ' + explain + '<br>';
+        if(fmtarr[strmd5] === 1){
+            outarr[strmd5] = outarr[strmd5] + '<span style="font-size:1.2em;color:#139313;">' + word + '</span> ' + explain + '<br>';
+        }
+        if(fmtarr[strmd5] === 2){
+            outarr[strmd5] = outarr[strmd5] + word + '####' + explain + '<br>';
+        }
+        if(fmtarr[strmd5] === 3){
+            outarr[strmd5] = outarr[strmd5] + word + ' ' + explain + "\n";
+        }
         idx++;
         if(idx<words.length){
             getword(words,idx,servobj,strmd5);
@@ -106,8 +121,16 @@ function getword(words,idx,servobj,strmd5){
             //servobj.writeHead('200',{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'POST','Access-Control-Allow-Headers':'x-requested-with,content-type','Content-Type': 'text/html;charset=utf-8'});
             var tmp = outarr[strmd5];
             delete outarr[strmd5];
+            delete fmtarr[strmd5];
             console.log('end-----------------');
-            return servobj.end(tmp);
+            //servobj.header("Access-Control-Allow-Origin", "*");
+            try{
+            	return servobj.header("Access-Control-Allow-Origin", "*").end(tmp);
+            }
+            catch(err){
+                console.log(err);
+            }
+            //return servobj.end(tmp);
         }
     };
 
@@ -117,19 +140,51 @@ function getword(words,idx,servobj,strmd5){
         //console.log('The solution is: ',  results.length );
         //如果没有查询到则调用远程查询
         if(results.length == 0){
-            //console.log('remote');
-            console.log('R>'+word);
-            getwordr(word,cb_getwordr);
+            if(word == '&middot;'){
+                console.log('...');
+                cb_next('','');   
+            }else{
+                //console.log('remote');
+                console.log('R>'+word);
+                getwordr(word,cb_getwordr);
+                //cb_next(word,'<span style="color:red">远端服务器故障，暂无结果</span>');
+            }
         }else{
             console.log('M>'+word);
+	    //console.log(results);
             //connection.end();
             if(word == ''){
                 cb_next('[]','查无结果');
             }else{
                 var wordexplain = '';
                 results.map(function(value, index, array) {
-                    var pronu = results[index].pronu != '' && results[index].pronu != null ? '【'+results[index].pronu+'】' : '';
-                    wordexplain = wordexplain+pronu+results[index].explain+'&nbsp;';
+                    console.log(strmd5);
+                    if(fmtarr[strmd5] === 1){
+                        var pronu = results[index].pronu != '' && results[index].pronu != null ? '【'+results[index].pronu+'】' : '';
+                        wordexplain = wordexplain+pronu+results[index].explain+'&nbsp;';
+
+
+			//console.log(results[index].examp.length);
+                        if(results[index].examp != '[]' && results[index].examp.length >2){
+				var tox = JSON.parse(results[index].examp);
+				var toxo = '';
+                                wordexplain += "<br><span style='color:#e66303'>[例句]</span><br>";
+				for(var toxi = 0;toxi < tox.length;toxi++){
+					wordexplain += tox[toxi] + "<br>";
+				}
+                        }
+
+
+
+
+
+                    }
+                    if(fmtarr[strmd5] === 2){
+                        wordexplain = wordexplain+results[index].explain+'&nbsp;';
+                    }
+                    if(fmtarr[strmd5] === 3){
+                        wordexplain = wordexplain+results[index].explain+' ';
+                    }
                 });
 
                 //cb_next(word,results[0].explain);
@@ -148,7 +203,7 @@ function getwordr(word,callback){
             'version': '2.8.2',
             'locale': 'zh',
             'platform': 'iOS',
-            'Content-Type': 'application/x-www-form-urlencoded',
+            'Content-Type': 'application/x-for-mpurlencoded',
             'User-Agent': 'YMTranslateCloudUser/2.8 (iPhone; iOS 10.3.3; Scale/2.00)'
         },
         form:{dict:'ThToCn',keyWord:word}
@@ -168,7 +223,9 @@ function getwordr(word,callback){
                 //console.log(word+bd1.data[0].explain);
             }
 
-        }
+        }else{
+		console.log(error);
+	}
     })
 }
 
@@ -204,14 +261,15 @@ var excludeSpecial = function(s) {
     return s;
 };
 
-function getxx(str,servobj){
+function getxx(str,servobj,fmtx){
     var strmd5 = md5(str);
     outarr[strmd5] = versioninfo;
+    fmtarr[strmd5] = fmtx;
     var request = {
         ':method' : 'POST',  
         ':scheme' : 'https',  
         ':path' : '/ajax/processquery',
-        ':authority': 'www.thai2english.com',
+        ':authority': 'old.thai2english.com',
         'content-type' : 'application/x-www-form-urlencoded; charset=UTF-8',
     };
 
@@ -277,6 +335,23 @@ function getxx(str,servobj){
 
 
 
+function getxxxn(str,servobj){
+    var strmd5 = md5(str)+Math.floor(Math.random()*100+1);
+    outarr[strmd5] = versioninfo;
+    fmtarr[strmd5] = 2;
+
+    words = str.split(/\n/);
+
+    getword(words,0,servobj,strmd5);
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -303,7 +378,23 @@ app.post('/thcn.do', urlencodedParser, function (req, res) {
     var str = excludeSpecial(req.body.wordstr);
     console.log(str);
 
-    getxx(str,res);
+    getxx(str,res,1);
+
+});
+
+app.post('/thcnfmx3.do', urlencodedParser, function (req, res) {
+    var str = excludeSpecial(req.body.wordstr);
+    console.log(str);
+    versioninfo = '';
+    getxx(str,res,3);
+
+});
+
+app.post('/thcnxn.do', urlencodedParser, function (req, res) {
+    var str = req.body.wordstr;
+    console.log(str);
+
+    getxxxn(str,res);
 
 });
 
@@ -321,7 +412,7 @@ app.get('/getnum.do',function(req,res){
             if(results.length == 0){
             }else{
                 //console.log(results);
-                return res.end(results[0]['rowcount'].toString());
+                return res.header("Access-Control-Allow-Origin", "*").end(results[0]['rowcount'].toString());
             }
         });
 
